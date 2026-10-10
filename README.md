@@ -2,7 +2,7 @@
 
 ![Graphviz diagram][graph]
 
-> [!NOTE]- Graph source
+> [!NOTE]
 >
 > ```dot
 > // graphviz: graph
