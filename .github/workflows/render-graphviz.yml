@@ -1,0 +1,30 @@
+name: Render Graphviz diagrams
+
+on:
+  push:
+    paths:
+      - '**/*.md'
+      - '.github/scripts/render_dot.py'
+  workflow_dispatch:   # run manually from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Graphviz
+        run: sudo apt-get update && sudo apt-get install -y graphviz
+
+      - name: Render inline dot blocks from Markdown
+        run: python3 .github/scripts/render_dot.py
+
+      - name: Commit rendered SVGs
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: render Graphviz diagrams"
+          file_pattern: "diagrams/*.svg **/diagrams/*.svg"
