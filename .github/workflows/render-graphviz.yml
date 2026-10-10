@@ -1,0 +1,60 @@
+name: Render Graphviz diagrams
+
+on:
+  push:
+  workflow_dispatch:   # Actions tab -> Render Graphviz diagrams -> Run workflow
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Graphviz
+        run: sudo apt-get update && sudo apt-get install -y graphviz
+
+      - name: Render .dot to .svg
+        run: |
+          set -e
+          echo "Repository files:"
+          find . -path ./.git -prune -o -type f -print | sort | head -50
+
+          # Finds every  <anything>/diagrams/dot/*.dot  and writes  <anything>/diagrams/svg/*.svg
+          count=0
+          while IFS= read -r f; do
+            out="$(dirname "$(dirname "$f")")/svg"
+            mkdir -p "$out"
+            dot -Tsvg "$f" -o "$out/$(basename "$f" .dot).svg"
+            echo "Rendered $out/$(basename "$f" .dot).svg"
+            count=$((count + 1))
+          done < <(find . -path ./.git -prune -o -type f -path '*/diagrams/dot/*.dot' -print)
+
+          if [ "$count" -eq 0 ]; then
+            echo "::error::No .dot files found in a diagrams/dot/ folder. Check the folder names (diagrams/dot) and that the project is not nested inside another folder."
+            exit 1
+          fi
+
+          # Remove SVGs whose .dot source no longer exists
+          while IFS= read -r s; do
+            src="$(dirname "$(dirname "$s")")/dot/$(basename "$s" .svg).dot"
+            if [ ! -f "$src" ]; then
+              rm -f "$s"
+              echo "Removed stale $s"
+            fi
+          done < <(find . -path ./.git -prune -o -type f -path '*/diagrams/svg/*.svg' -print)
+
+      - name: Commit and push rendered SVGs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- '*.svg'
+          if git diff --cached --quiet; then
+            echo "SVGs already up to date. Nothing to commit."
+          else
+            git commit -m "chore: render Graphviz diagrams"
+            git push
+          fi

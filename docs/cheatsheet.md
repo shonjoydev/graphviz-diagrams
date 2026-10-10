@@ -1,8 +1,15 @@
-# Color and Style Cheatsheet
+# Diagram Cheatsheet
 
-Copy the hex codes into the `node` and `edge` lines of your dot block.
+## Which tool for what
 
-## Palettes
+| Diagram | Tool | Where the code lives |
+|---|---|---|
+| Trees (BST, heap, trie) | Mermaid | Inline in the `.md` file |
+| Graphs (weighted, MST, shortest path) | Graphviz | `diagrams/dot/*.dot`, rendered to `diagrams/svg/*.svg` |
+
+---
+
+## Graphviz palettes
 
 ### Indigo (default)
 
@@ -48,17 +55,7 @@ Copy the hex codes into the `node` and `edge` lines of your dot block.
 | Weight text | `#0369a1` | `#38bdf8` |
 | Highlight | `#7c3aed` | `#c4b5fd` |
 
-### Neutral (one image for both themes)
-
-| Element | Value |
-|---|---|
-| Node fill | `#6366f1` |
-| Node border | `#4338ca` |
-| Node text | `#ffffff` |
-| Edge line | `#64748b` |
-| Weight text | `#d97706` |
-
-## Style tokens
+## Graphviz style tokens
 
 | Property | Value |
 |---|---|
@@ -70,7 +67,14 @@ Copy the hex codes into the `node` and `edge` lines of your dot block.
 | Weight beside the edge | `xlabel` plus `forcelabels=true` |
 | Weight on the edge | `label` |
 
-## Template
+### Highlight an edge or node
+
+```
+A -- D [xlabel="5", color="#dc2626", penwidth=4];
+A [pos="1.21,4.35!", color="#dc2626", penwidth=4];
+```
+
+### Template
 
 ```
 node [shape=circle, fixedsize=true, width=0.66,
@@ -81,15 +85,31 @@ edge [color="<EDGE>", penwidth=2.5,
       fontname="Times-Bold", fontsize=20, fontcolor="<WEIGHT>"];
 ```
 
-## Highlight a path or MST
+### Directed graph
 
+Use `digraph G { ... }` and `A -> B` instead of `graph G { ... }` and `A -- B`.
+
+---
+
+## Mermaid for trees
+
+| Need | Syntax |
+|---|---|
+| Top-down tree | `flowchart TD` |
+| Circle node | `N8((8))` |
+| Edge | `N8 --> N3` |
+| Highlight nodes | `classDef visited fill:#6366f1,stroke:#4338ca,color:#ffffff` then `class N8,N3 visited` |
+| Highlight edges | `linkStyle 0,3 stroke:#dc2626,stroke-width:3px` (edge numbers start at 0, in written order) |
+
+Mermaid adapts to GitHub's light and dark themes by itself. Use mid-tone or filled colors for highlights so they read on both.
+
+---
+
+## Light and dark images for graphs
+
+```markdown
+![Graph](../diagrams/svg/graph-light.svg#gh-light-mode-only)
+![Graph](../diagrams/svg/graph-dark.svg#gh-dark-mode-only)
 ```
-A -- D [xlabel="5", color="#dc2626", penwidth=4];
-```
 
-## Tips
-
-- On a transparent background, use mid-tone edge colors so they stay readable on white and near-black pages.
-- Use one accent color for weights and one for highlights.
-- Positions are in inches, `pos="x,y!"`. The `!` pins the node, and the origin is the bottom-left.
-- `graph` with `--` is undirected, `digraph` with `->` is directed.
+Adjust the `../` to match the Markdown file's location.
