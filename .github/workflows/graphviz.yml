@@ -5,7 +5,7 @@ on:
     paths:
       - '**/*.md'
       - '.github/scripts/update_urls.py'
-  workflow_dispatch:   # run manually from the Actions tab
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -14,10 +14,9 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Update diagram URLs from inline dot blocks
+      - name: Update diagram URLs
         run: python3 .github/scripts/update_urls.py
 
       - name: Commit updated Markdown
