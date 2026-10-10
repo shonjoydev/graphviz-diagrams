@@ -39,5 +39,3 @@
 >     F -- G [xlabel="11"];
 > }
 > ```
-
-[graph]: https://kroki.io/graphviz/svg/eNqV0ktugzAQBuB9TkHplljY5hVFXpTmcYHuoi4MjBMkByMgatKqd68xBALKpl7ON4P_sThWvDxZe-tnYekj-U1dGlYAb9TaVJJjqqSqWFPxoi55BUXTgVBVCpInIGuNF1gvTLlQGViH-sRLYGlepRIcS-RXyOr8G0yjY33lWXNiLgoCx8x0R6iiKfgZmP2Rn6FexkpmtmPKZpaQx-66uUlgIpcSsvYGKbuc9isGsqKJnrwXIhylIrLnd90ZXAiF0P0lFF0ygvzPbknIjnqbe-fK4zSJZp3_WsF1JleLJBHEsz_7t3uzDqWqmY0RwY6HqP9i9zniXgJEAy0uHuS9F9q-JkUeGWQzfo04GIXBINtefORhhyBCB9kNX9NRXRSGg-yHBD4dpY-9XLY5ruZvYHZ4nzGwGcEfQ2uIR4gm8DCxmsD2yR3xDPxx_SngqexGCcZ3mUI0gf2TWLsZYNzK7-IPOdzeyA==
