@@ -1,14 +1,16 @@
-# Graphviz Diagrams (Light + Dark Mode)
+# Graphviz in Markdown (Inline, Light + Dark)
 
-Write diagrams as `.dot` files. A GitHub Action renders them to transparent SVGs, and your Markdown shows the SVGs.
+Write Graphviz code **inside your Markdown file**. There are no `.dot` files and no `.svg` files. The only file you edit is your `.md`.
 
-![Weighted graph](diagrams/graph-light.svg#gh-light-mode-only)
-![Weighted graph](diagrams/graph-dark.svg#gh-dark-mode-only)
+See the working example in [`diagrams.md`](diagrams.md).
 
-![viz](diagrams/graph-neutral.svg)
+---
 
-> [!NOTE]
-> The image above switches automatically with the viewer's GitHub theme. See **How to use** below.
+## Why a renderer is needed
+
+GitHub can draw Mermaid blocks natively, but it cannot draw Graphviz, and it strips inline SVG and `data:` images from Markdown. So without any image files, the picture has to come from a rendering service.
+
+This project uses **Kroki** (kroki.io). The image URL contains your compressed dot code, and Kroki returns an SVG when the page loads. A GitHub Action keeps those URLs up to date, so you never have to encode anything by hand.
 
 ---
 
@@ -16,128 +18,165 @@ Write diagrams as `.dot` files. A GitHub Action renders them to transparent SVGs
 
 ```
 graphviz-diagrams/
-├── .github/workflows/render-graphviz.yml   # the GitHub Action
-├── dot/                                     # EDIT THESE (source files)
-│   ├── graph-light.dot
-│   ├── graph-dark.dot
-│   └── graph-neutral.dot
-├── diagrams/                                # GENERATED SVGs (do not edit)
-│   ├── graph-light.svg
-│   ├── graph-dark.svg
-│   └── graph-neutral.svg
+├── .github/
+│   ├── workflows/update-graphviz-urls.yml   # the GitHub Action
+│   └── scripts/update_urls.py               # builds the image URLs
+├── diagrams.md                              # EDIT THIS: inline dot code
 ├── docs/cheatsheet.md                       # color palettes and style tokens
-└── README.md
+└── README.md                                # this guide
 ```
-
-| File            | Best for                                            |
-| --------------- | --------------------------------------------------- |
-| `graph-light`   | Light backgrounds                                   |
-| `graph-dark`    | Dark backgrounds                                    |
-| `graph-neutral` | Works on both (solid indigo nodes, mid-tone colors) |
 
 ---
 
-## How the automation works
+## How it works
 
-1. You edit a file in `dot/` and push.
-2. The Action runs `dot -Tsvg` on every `dot/*.dot` file.
-3. It commits the results to `diagrams/<same-name>.svg`.
-4. Your Markdown shows the SVG.
+1. You edit a `dot` block in `diagrams.md` and push.
+2. The Action finds every block whose **first line** is `// graphviz: NAME`.
+3. It rewrites the matching line `[NAME]: https://kroki.io/graphviz/svg/...` at the bottom of the file.
+4. Your image line `![Weighted graph][NAME]` shows the diagram.
 
-The Action only runs when files in `dot/` change, so its own commits never trigger it again. You can also run it manually from the **Actions** tab (**Render Graphviz diagrams → Run workflow**).
+The Action's own commit does not trigger it again, because commits made with the built-in token don't start new workflow runs. You can also run it manually from the **Actions** tab.
 
 ---
 
-## How to use
+## The block syntax
 
-### Option A: Both modes (recommended)
+Each diagram needs two things: an image line, and a source block. The URL line is added and maintained for you.
 
-Shows the light diagram to light-theme viewers and the dark diagram to dark-theme viewers.
+````markdown
+![My graph][my-graph]
 
-**Markdown only (GitHub):**
+> [!NOTE]
+> **Source**
+>
+> ```dot
+> // graphviz: my-graph
+> graph G {
+>     A -- B [label=5];
+> }
+> ```
+````
+
+After the first run, the Action adds this to the bottom of the file:
+
+```
+[my-graph]: https://kroki.io/graphviz/svg/eNqV...
+```
+
+A plain code block works too, if you don't want the callout:
+
+````markdown
+```dot
+// graphviz: my-graph
+graph G {
+    A -- B [label=5];
+}
+```
+````
+
+Rules:
+
+- The first line inside the block must be exactly `// graphviz: NAME`. Use letters, numbers, `-` and `_` only.
+- Each name must be unique within a file.
+- The image line must use the same name: `![alt][NAME]`.
+- `README.md` and everything in `docs/` are skipped, because they contain syntax examples. To change this, edit `SKIP_FILES` and `SKIP_DIRS` in `update_urls.py`.
+
+---
+
+## How to use: one mode or both
+
+`diagrams.md` contains three versions of the same graph:
+
+| Name | Best for |
+|---|---|
+| `graph-light` | Light backgrounds |
+| `graph-dark` | Dark backgrounds |
+| `graph-neutral` | Both (solid indigo nodes, mid-tone colors) |
+
+Names ending in `-light` or `-dark` automatically get GitHub's `#gh-light-mode-only` or `#gh-dark-mode-only` suffix on their URL line. This is what makes GitHub show the right one for each viewer.
+
+### Both modes (recommended)
+
+Keep the `graph-light` and `graph-dark` blocks, and use both image lines:
 
 ```markdown
-![My graph](diagrams/graph-light.svg#gh-light-mode-only)
-![My graph](diagrams/graph-dark.svg#gh-dark-mode-only)
+![My graph][graph-light]
+![My graph][graph-dark]
 ```
 
-**With `<picture>` (works on GitHub and most other renderers):**
+### Light mode only
 
-```html
-<picture>
-  <source
-    media="(prefers-color-scheme: dark)"
-    srcset="diagrams/graph-dark.svg"
-  />
-  <img src="diagrams/graph-light.svg" alt="My graph" />
-</picture>
-```
-
-### Option B: Light mode only
+Keep only the `graph-light` block. Rename it to `graph-main` (no `-light` suffix) so the suffix isn't added, and use:
 
 ```markdown
-![My graph](diagrams/graph-light.svg)
+![My graph][graph-main]
 ```
 
-You can delete `dot/graph-dark.dot` and `dot/graph-neutral.dot` if you don't need them.
+### Dark mode only
 
-### Option C: Dark mode only
+Same idea: keep only the dark block, rename it to `graph-main` (no `-dark` suffix), and use:
 
 ```markdown
-![My graph](diagrams/graph-dark.svg)
+![My graph][graph-main]
 ```
 
-You can delete `dot/graph-light.dot` and `dot/graph-neutral.dot` if you don't need them.
+### One image for both themes
 
-### Option D: One image for both themes
-
-Use the neutral version. It has a single file and a single line, and stays readable on light and dark pages.
+Keep only the `graph-neutral` block, and use:
 
 ```markdown
-![My graph](diagrams/graph-neutral.svg)
+![My graph][graph-neutral]
 ```
 
-> If you delete a `.dot` file, also delete its matching SVG from `diagrams/`. The Action does not remove old SVGs.
+> Delete the unused blocks **and** their `[name]: https://...` lines at the bottom of the file.
 
 ---
 
 ## Add your own diagram
 
-1. Copy `dot/graph-light.dot` to `dot/my-diagram-light.dot` and `dot/graph-dark.dot` to `dot/my-diagram-dark.dot`.
-2. Change the nodes and edges. Keep the color lines for each theme.
-3. Push. The Action creates `diagrams/my-diagram-light.svg` and `diagrams/my-diagram-dark.svg`.
-4. Reference them with Option A, B, C or D above.
+1. Copy a block in `diagrams.md` (or create a new `.md` file anywhere except `README.md` and `docs/`).
+2. Change the name on the first line, and edit the nodes and edges.
+3. Add an image line, `![alt][name]`.
+4. Push. The Action adds the `[name]: ...` URL line within a minute.
+
+For two themes, make two blocks with matching names such as `my-graph-light` and `my-graph-dark`.
 
 ### Change colors
 
-Edit the hex codes at the top of each `.dot` file (`fillcolor`, `color`, `fontcolor`). Ready-made palettes (Indigo, Emerald, Mono, Rose) are in `docs/cheatsheet.md`.
+Edit the hex codes in `fillcolor`, `color`, `fontcolor` and the `edge` line. Ready-made palettes are in `docs/cheatsheet.md`.
 
-### Highlight a path or MST
+---
 
-```dot
-A -- D [xlabel="5", color="#dc2626", penwidth=4];
-```
+## Things to know
+
+- **Third-party service.** Your dot code is sent to kroki.io whenever someone views the page. Don't use this for confidential diagrams. For private use, self-host Kroki with Docker (`yuzutech/kroki`) and set `KROKI_BASE` at the top of `update_urls.py`.
+- **Needs internet.** If kroki.io is down or blocked, the images won't load.
+- **URL length.** The graph in this project uses about 525 characters. Very large graphs (several thousand characters) may hit URL limits. Split them or self-host Kroki.
+- **Not visible outside GitHub.** Many local Markdown previewers show these images fine, but offline ones will not.
+- **Prefer no external service?** Use Mermaid, which GitHub renders natively. The layout is automatic, so it won't match exact node positions.
 
 ---
 
 ## Preview locally (optional)
 
-Install Graphviz, then:
+Run from the project root:
 
 ```bash
-dot -Tsvg dot/graph-light.dot -o diagrams/graph-light.svg
+python3 .github/scripts/update_urls.py
 ```
 
-Or paste a `.dot` file into <https://dreampuf.github.io/GraphvizOnline>
+This updates the URL lines in your Markdown files. No Graphviz install is needed.
 
 ---
 
 ## Troubleshooting
 
-| Problem                                    | Fix                                                                                                                                         |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Image is broken right after the first push | Wait a minute for the Action to finish, then refresh. The SVGs are also included in this project, so this only happens if you removed them. |
-| Action fails with a permission error       | Go to **Settings → Actions → General → Workflow permissions** and select **Read and write permissions**.                                    |
-| Action never runs                          | Check that the `.github` folder uploaded. It is hidden on some systems. Also check that Actions is enabled in the repo's **Actions** tab.   |
-| Edited a `.dot` but the SVG didn't change  | Make sure the file is inside `dot/`, and check the **Actions** tab for errors.                                                              |
-| Weights hard to read                       | Raise `fontsize` in the `edge` line, or switch `xlabel` to `label` to put the weight on the line.                                           |
+| Problem | Fix |
+|---|---|
+| Image is broken right after a push | Wait a minute for the Action to finish, then run `git pull` and refresh. |
+| Action fails with a permission error | Go to **Settings → Actions → General → Workflow permissions** and select **Read and write permissions**. |
+| Action never runs | Check that the hidden `.github` folder uploaded, and that Actions is enabled in the **Actions** tab. |
+| No URL line was added | The first line inside the block must be exactly `// graphviz: NAME`, with no blank line before it. |
+| Image shows an error from Kroki | There is a syntax error in the dot code, such as a missing `;` or an unclosed quote. Test the code at https://dreampuf.github.io/GraphvizOnline. |
+| Block inside a callout is ignored | Keep the `>` on every line, including blank lines. |
+| Both light and dark images show at once | The name must end in `-light` or `-dark`, or the URL line must end in `#gh-light-mode-only` or `#gh-dark-mode-only`. |

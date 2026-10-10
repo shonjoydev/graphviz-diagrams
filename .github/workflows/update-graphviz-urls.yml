@@ -1,0 +1,27 @@
+name: Update Graphviz diagram URLs
+
+on:
+  push:
+    paths:
+      - '**/*.md'
+      - '.github/scripts/update_urls.py'
+  workflow_dispatch:   # run manually from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update diagram URLs from inline dot blocks
+        run: python3 .github/scripts/update_urls.py
+
+      - name: Commit updated Markdown
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update Graphviz diagram URLs"
+          file_pattern: "*.md"
