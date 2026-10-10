@@ -1,11 +1,14 @@
-# Graphviz in Markdown (Inline, Light + Dark)
+# Graphviz Diagrams (Light + Dark Mode)
 
-Write Graphviz code **inside your Markdown file**. A GitHub Action finds each block, renders it to a transparent SVG, and commits it to `diagrams/`. Your Markdown then shows the SVG.
-
-No separate `.dot` files needed.
+Write diagrams as `.dot` files. A GitHub Action renders them to transparent SVGs, and your Markdown shows the SVGs.
 
 ![Weighted graph](diagrams/graph-light.svg#gh-light-mode-only)
 ![Weighted graph](diagrams/graph-dark.svg#gh-dark-mode-only)
+
+![viz](diagrams/graph-neutral.svg)
+
+> [!NOTE]
+> The image above switches automatically with the viewer's GitHub theme. See **How to use** below.
 
 ---
 
@@ -13,138 +16,101 @@ No separate `.dot` files needed.
 
 ```
 graphviz-diagrams/
-├── .github/
-│   ├── workflows/render-graphviz.yml   # the GitHub Action
-│   └── scripts/render_dot.py           # finds and renders inline blocks
-├── diagrams.md                         # EDIT THIS: inline dot code lives here
-├── diagrams/                           # GENERATED SVGs (do not edit)
-├── docs/cheatsheet.md                  # color palettes and style tokens
-└── README.md                           # this guide
+├── .github/workflows/render-graphviz.yml   # the GitHub Action
+├── dot/                                     # EDIT THESE (source files)
+│   ├── graph-light.dot
+│   ├── graph-dark.dot
+│   └── graph-neutral.dot
+├── diagrams/                                # GENERATED SVGs (do not edit)
+│   ├── graph-light.svg
+│   ├── graph-dark.svg
+│   └── graph-neutral.svg
+├── docs/cheatsheet.md                       # color palettes and style tokens
+└── README.md
 ```
 
----
-
-## How it works
-
-1. You edit the `dot` code block in `diagrams.md` (or any other `.md` file) and push.
-2. The Action finds every block whose **first line** is `// graphviz: NAME`.
-3. It renders each one to `diagrams/NAME.svg` and commits it.
-4. Your Markdown shows the SVG through a normal image line.
-
-The Action only runs when a `.md` file changes, so its own commits never trigger it again. You can also run it manually from the **Actions** tab.
+| File            | Best for                                            |
+| --------------- | --------------------------------------------------- |
+| `graph-light`   | Light backgrounds                                   |
+| `graph-dark`    | Dark backgrounds                                    |
+| `graph-neutral` | Works on both (solid indigo nodes, mid-tone colors) |
 
 ---
 
-## The block syntax
+## How the automation works
 
-The first line inside the code block names the output file. Wrapping the block in a callout is optional, but it keeps the source tidy under the image.
+1. You edit a file in `dot/` and push.
+2. The Action runs `dot -Tsvg` on every `dot/*.dot` file.
+3. It commits the results to `diagrams/<same-name>.svg`.
+4. Your Markdown shows the SVG.
 
-````markdown
-![My graph](diagrams/my-graph.svg)
-
-> [!NOTE]
-> **Source**
->
-> ```dot
-> // graphviz: my-graph
-> graph G {
->     A -- B [label=5];
-> }
-> ```
-````
-
-You can also use a plain code block without the callout:
-
-````markdown
-```dot
-// graphviz: my-graph
-graph G {
-    A -- B [label=5];
-}
-```
-````
-
-Rules:
-
-- The first line must be exactly `// graphviz: NAME`. Use letters, numbers, `-` and `_` only.
-- Each name must be unique within a file.
-- The SVG is saved in a `diagrams/` folder next to the Markdown file.
-- `README.md` and everything in `docs/` are skipped, because they contain syntax examples. To change this, edit `SKIP_FILES` and `SKIP_DIRS` in `.github/scripts/render_dot.py`.
+The Action only runs when files in `dot/` change, so its own commits never trigger it again. You can also run it manually from the **Actions** tab (**Render Graphviz diagrams → Run workflow**).
 
 ---
 
-## How to use: one mode or both
+## How to use
 
-`diagrams.md` already contains three versions of the same graph:
+### Option A: Both modes (recommended)
 
-| Name | Best for |
-|---|---|
-| `graph-light` | Light backgrounds |
-| `graph-dark` | Dark backgrounds |
-| `graph-neutral` | Both (solid indigo nodes, mid-tone colors) |
+Shows the light diagram to light-theme viewers and the dark diagram to dark-theme viewers.
 
-### Both modes (recommended)
-
-Light viewers see the light version and dark viewers see the dark version.
-
-**Markdown only:**
+**Markdown only (GitHub):**
 
 ```markdown
 ![My graph](diagrams/graph-light.svg#gh-light-mode-only)
 ![My graph](diagrams/graph-dark.svg#gh-dark-mode-only)
 ```
 
-**With `<picture>`** (works on GitHub and most other renderers):
+**With `<picture>` (works on GitHub and most other renderers):**
 
 ```html
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="diagrams/graph-dark.svg">
-  <img src="diagrams/graph-light.svg" alt="My graph">
+  <source
+    media="(prefers-color-scheme: dark)"
+    srcset="diagrams/graph-dark.svg"
+  />
+  <img src="diagrams/graph-light.svg" alt="My graph" />
 </picture>
 ```
 
-You need both blocks (`graph-light` and `graph-dark`) in your Markdown.
-
-### Light mode only
-
-Keep only the `graph-light` block, and use:
+### Option B: Light mode only
 
 ```markdown
 ![My graph](diagrams/graph-light.svg)
 ```
 
-### Dark mode only
+You can delete `dot/graph-dark.dot` and `dot/graph-neutral.dot` if you don't need them.
 
-Keep only the `graph-dark` block, and use:
+### Option C: Dark mode only
 
 ```markdown
 ![My graph](diagrams/graph-dark.svg)
 ```
 
-### One image for both themes
+You can delete `dot/graph-light.dot` and `dot/graph-neutral.dot` if you don't need them.
 
-Keep only the `graph-neutral` block, and use:
+### Option D: One image for both themes
+
+Use the neutral version. It has a single file and a single line, and stays readable on light and dark pages.
 
 ```markdown
 ![My graph](diagrams/graph-neutral.svg)
 ```
 
-> If you remove a block, also delete its SVG from `diagrams/`. The Action does not delete old SVGs.
+> If you delete a `.dot` file, also delete its matching SVG from `diagrams/`. The Action does not remove old SVGs.
 
 ---
 
 ## Add your own diagram
 
-1. Open `diagrams.md` (or create a new `.md` file anywhere except `README.md` and `docs/`).
-2. Copy a block, change the name on the first line, and edit the nodes and edges.
-3. Add an image line pointing to `diagrams/<name>.svg`.
-4. Push, and the SVG appears after the Action finishes.
-
-For two themes, copy the light and dark blocks and give them matching names, such as `my-graph-light` and `my-graph-dark`.
+1. Copy `dot/graph-light.dot` to `dot/my-diagram-light.dot` and `dot/graph-dark.dot` to `dot/my-diagram-dark.dot`.
+2. Change the nodes and edges. Keep the color lines for each theme.
+3. Push. The Action creates `diagrams/my-diagram-light.svg` and `diagrams/my-diagram-dark.svg`.
+4. Reference them with Option A, B, C or D above.
 
 ### Change colors
 
-Edit the hex codes in `fillcolor`, `color`, `fontcolor` and the `edge` line. Ready-made palettes (Indigo, Emerald, Mono, Rose) are in `docs/cheatsheet.md`.
+Edit the hex codes at the top of each `.dot` file (`fillcolor`, `color`, `fontcolor`). Ready-made palettes (Indigo, Emerald, Mono, Rose) are in `docs/cheatsheet.md`.
 
 ### Highlight a path or MST
 
@@ -156,24 +122,22 @@ A -- D [xlabel="5", color="#dc2626", penwidth=4];
 
 ## Preview locally (optional)
 
-Install Graphviz and Python, then run from the project root:
+Install Graphviz, then:
 
 ```bash
-python3 .github/scripts/render_dot.py
+dot -Tsvg dot/graph-light.dot -o diagrams/graph-light.svg
 ```
 
-Or paste the dot code (without the first comment line) into https://dreampuf.github.io/GraphvizOnline
+Or paste a `.dot` file into <https://dreampuf.github.io/GraphvizOnline>
 
 ---
 
 ## Troubleshooting
 
-| Problem | Fix |
-|---|---|
-| Image is broken right after a push | Wait a minute for the Action to finish, then refresh. |
-| Action fails with a permission error | Go to **Settings → Actions → General → Workflow permissions** and select **Read and write permissions**. |
-| Action never runs | Check that the hidden `.github` folder uploaded, and that Actions is enabled in the **Actions** tab. |
-| A block is not rendered | The first line inside the code block must be exactly `// graphviz: NAME`, with no blank line before it. |
-| Action fails with a render error | The log shows the Graphviz error and the block name. Usually it's a missing `;` or an unclosed quote. |
-| Block inside a callout is ignored | Keep the `>` on every line, including blank lines. |
-| Weights hard to read | Raise `fontsize` in the `edge` line, or switch `xlabel` to `label` to put the weight on the line. |
+| Problem                                    | Fix                                                                                                                                         |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Image is broken right after the first push | Wait a minute for the Action to finish, then refresh. The SVGs are also included in this project, so this only happens if you removed them. |
+| Action fails with a permission error       | Go to **Settings → Actions → General → Workflow permissions** and select **Read and write permissions**.                                    |
+| Action never runs                          | Check that the `.github` folder uploaded. It is hidden on some systems. Also check that Actions is enabled in the repo's **Actions** tab.   |
+| Edited a `.dot` but the SVG didn't change  | Make sure the file is inside `dot/`, and check the **Actions** tab for errors.                                                              |
+| Weights hard to read                       | Raise `fontsize` in the `edge` line, or switch `xlabel` to `label` to put the weight on the line.                                           |
